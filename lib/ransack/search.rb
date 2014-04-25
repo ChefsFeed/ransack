@@ -8,13 +8,14 @@ module Ransack
 
     attr_reader :base, :context
 
-    delegate :object, :klass, :to => :context
+    delegate :object, :klass, to: :context
     delegate :new_grouping, :new_condition,
              :build_grouping, :build_condition,
-             :translate, :to => :base
+             :translate, to: :base
 
     def initialize(object, params = {}, options = {})
-      (params ||= {}).delete_if { |k, v| v.blank? && v != false }
+      params = {} unless params.is_a?(Hash)
+      params.delete_if { |k, v| v.blank? && v != false }
       @context = Context.for(object, options)
       @context.auth_object = options[:auth_object]
       @base = Nodes::Grouping.new(@context, 'and')
@@ -42,7 +43,11 @@ module Ransack
       case args
       when Array
         args.each do |sort|
-          sort = Nodes::Sort.extract(@context, sort)
+          if sort.kind_of? Hash
+            sort = Nodes::Sort.new(@context).build(sort)
+          else
+            sort = Nodes::Sort.extract(@context, sort)
+          end
           self.sorts << sort
         end
       when Hash
@@ -71,14 +76,6 @@ module Ransack
 
     def new_sort(opts = {})
       Nodes::Sort.new(@context).build(opts)
-    end
-
-    def respond_to?(method_id, include_private = false)
-      super or begin
-        method_name = method_id.to_s
-        writer = method_name.sub!(/\=$/, '')
-        base.attribute_method?(method_name) ? true : false
-      end
     end
 
     def method_missing(method_id, *args)
