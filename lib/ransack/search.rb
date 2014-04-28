@@ -30,10 +30,10 @@ module Ransack
       collapse_multiparameter_attributes!(params).each do |key, value|
         if key == 's' || key == 'sorts'
           send("#{key}=", value)
-        elsif @base.attribute_method?(key)
-          base.send("#{key}=", value)
         elsif @context.ransackable_scope?(key, @context.object)
           @context.chain_scope(key, value)
+        elsif @base.attribute_method?(key)
+          base.send("#{key}=", value)
         end
       end
       self
